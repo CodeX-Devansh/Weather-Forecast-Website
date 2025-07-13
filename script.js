@@ -48,7 +48,7 @@ const hourlyForecastList = document.getElementById('hourlyForecastList');
 const dailyForecastList = document.getElementById('dailyForecastList');
 
 // Backend URL
-const BACKEND_URL = 'http://localhost:3000';
+const BACKEND_URL = 'https://weather-forecast-website-backend.onrender.com';
 
 // State for units (true = Celsius, false = Fahrenheit)
 let isCelsius = true;
