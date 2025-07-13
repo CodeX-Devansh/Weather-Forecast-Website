@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Professional Animated Weather - With Map</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Google Fonts - Roboto and Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <!-- Leaflet CSS for Map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+</head>
+<body>
+    <div id="weatherAppContainer" class="weather-app-container clear-sky-day">
+        <header class="header">
+            <input type="text" id="cityInput" placeholder="Enter city name">
+            <button id="searchBtn" class="icon-button" title="Search"><i class="fas fa-search"></i></button>
+            <button id="locationBtn" class="icon-button" title="Use my location"><i class="fas fa-location-dot"></i></button>
+        </header>
+
+        <div id="loading" class="loading-overlay">
+            <div class="spinner"></div>
+            <span>Loading weather...</span>
+        </div>
+        <div id="error" class="error-message"></div>
+
+        <main id="mainWeatherCard" class="main-weather-card">
+            <!-- Location Alert Banner (Optional, for geolocation issues) -->
+            <div id="locationAlert" class="location-alert-banner" style="display: none;">
+                Location unavailable. Displaying default location: London <span class="close-alert">×</span>
+            </div>
+
+            <div id="weatherDisplayContent" class="weather-display-content">
+                <div class="top-section-grid">
+                    <!-- Current Weather Summary (Left Column) -->
+                    <section class="current-weather-summary module delay-0">
+                        <div class="date-time" id="currentDateTime"></div>
+                        <div class="location-heading">
+                            <span id="locationName"></span>
+                            <span class="country-code" id="countryCode"></span>
+                        </div>
+                        <div class="current-temp-line">
+                            <div class="red-dot"></div>
+                            <span id="currentTemp">--</span><span class="unit-toggle" id="unitToggle">°C</span>
+                        </div>
+                        
+                        <!-- >>>>> MISSING / CORRECTED PART STARTS HERE <<<<< -->
+                        <div class="condition-icon">
+                            <img id="currentWeatherIcon" src="" alt="Weather Icon">
+                        </div>
+                        <div class="condition-description" id="currentWeatherDescriptionSummary"></div>
+                        <!-- >>>>> MISSING / CORRECTED PART ENDS HERE <<<<< -->
+
+                        <div class="feels-like-summary">
+                            <span id="feelsLikeTempSummary">Feels like: --°C.</span>
+                            <span id="windBriefSummary"></span>
+                        </div>
+
+                        <!-- Current Details Grid (Matches image more closely) -->
+                        <div class="current-details-grid">
+                            <div class="detail-item">
+                                <i class="fas fa-wind icon-blue"></i>
+                                <div class="detail-value" id="windSpeed">--m/s <span id="windDirection"></span></div>
+                                <div class="detail-label">Wind</div>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-tachometer-alt icon-blue"></i>
+                                <div class="detail-value" id="pressure">--hPa</div>
+                                <div class="detail-label">Pressure</div>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-tint icon-blue"></i>
+                                <div class="detail-value" id="humidity">--%</div>
+                                <div class="detail-label">Humidity</div>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-sun icon-blue"></i>
+                                <div class="detail-value" id="uvIndex">--</div>
+                                <div class="detail-label">UV</div>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-thermometer-empty icon-blue"></i>
+                                <div class="detail-value" id="dewPoint">--°C</div>
+                                <div class="detail-label">Dew point</div>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-eye icon-blue"></i>
+                                <div class="detail-value" id="visibility">--km</div>
+                                <div class="detail-label">Visibility</div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Map & Precipitation Section (Right Column) -->
+                    <section class="map-precipitation-area module delay-1">
+                        <div id="weatherMap" class="weather-map-container">
+                            <!-- Leaflet Map will be initialized here -->
+                        </div>
+                        <div class="open-street-map-credit">© OpenStreetMap</div>
+                        <div class="precipitation-timeline-placeholder">
+                            <h4>No precipitation within an hour</h4>
+                            <div class="timeline-visual">
+                                <div class="timeline-bar"></div>
+                                <div class="timeline-labels">
+                                    <span>now</span>
+                                    <span>15min</span>
+                                    <span>30min</span>
+                                    <span>45min</span>
+                                    <span>60min</span>
+                                </div>
+                                <div class="timeline-times">
+                                    <span id="nowTime">--:--pm</span>
+                                    <span id="time15min">--:--pm</span>
+                                    <span id="time30min">--:--pm</span>
+                                    <span id="time45min">--:--pm</span>
+                                    <span id="time60min">--:--pm</span>
+                                </div>
+                                <div class="precipitation-amount">0mm/h</div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Hourly Forecast Section (Below Top Grid) -->
+                <section class="hourly-forecast-section module delay-2">
+                    <h2>Hourly Forecast</h2>
+                    <div class="hourly-list" id="hourlyForecastList">
+                        <!-- Hourly items will be loaded here -->
+                    </div>
+                </section>
+
+                <!-- Daily Forecast Section (Below Hourly) -->
+                <section class="daily-forecast-section module delay-3">
+                    <h2>8-day forecast</h2>
+                    <div class="daily-list" id="dailyForecastList">
+                        <!-- Daily items will be loaded here -->
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Leaflet JS for Map (IMPORTANT: Keep this AFTER your script.js or at the end of body) -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
