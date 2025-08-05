@@ -1,3 +1,6 @@
+// --- Initial Debugging Setup ---
+console.log("Script.js: Starting execution.");
+
 const cityInput = document.getElementById('cityInput');
 const searchBtn = document.getElementById('searchBtn');
 const locationBtn = document.getElementById('locationBtn');
@@ -19,14 +22,14 @@ const currentDateTimeEl = document.getElementById('currentDateTime');
 const locationNameEl = document.getElementById('locationName');
 const countryCodeEl = document.getElementById('countryCode');
 const currentTempEl = document.getElementById('currentTemp');
-const currentWeatherIconEl = document.getElementById('currentWeatherIcon'); 
-const currentWeatherDescriptionSummaryEl = document.getElementById('currentWeatherDescriptionSummary'); // Corrected in HTML
-const feelsLikeTempEl = document.getElementById('feelsLikeTempSummary'); 
+const currentWeatherIconEl = document.getElementById('currentWeatherIcon');
+const currentWeatherDescriptionSummaryEl = document.getElementById('currentWeatherDescriptionSummary');
+const feelsLikeTempEl = document.getElementById('feelsLikeTempSummary');
 const windBriefSummaryEl = document.getElementById('windBriefSummary');
 
 // Current Details Elements
 const windSpeedEl = document.getElementById('windSpeed');
-const windDirectionEl = document.getElementById('windDirection');
+const windDirectionEl = document = document.getElementById('windDirection'); // Corrected typo here
 const pressureEl = document.getElementById('pressure');
 const humidityEl = document.getElementById('humidity');
 const uvIndexEl = document.getElementById('uvIndex');
@@ -48,7 +51,7 @@ const hourlyForecastList = document.getElementById('hourlyForecastList');
 const dailyForecastList = document.getElementById('dailyForecastList');
 
 // Backend URL
-const BACKEND_URL = 'https://weather-forecast-website-backend.onrender.com';
+const BACKEND_URL = 'http://localhost:3000';
 
 // State for units (true = Celsius, false = Fahrenheit)
 let isCelsius = true;
@@ -62,8 +65,9 @@ let currentMarker;
 
 // --- Map Initialization ---
 function initializeMap() {
+    console.log("Script.js: Initializing map.");
     if (!map) {
-        map = L.map('weatherMap', { zoomControl: false }).setView([0, 0], 2);
+        map = L.map('weatherMap', { zoomControl: false, attributionControl: false }).setView([0, 0], 2);
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
@@ -71,6 +75,14 @@ function initializeMap() {
         }).addTo(map);
 
         L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        // Explicitly set Leaflet's default icon paths for markers
+        delete L.Icon.Default.prototype._getIconUrl; // This line might be needed if marker icons are still broken (was _get in earlier versions)
+        L.Icon.Default.mergeOptions({
+            iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+            iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+            shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
+        });
 
         // Disable map interaction initially for aesthetics, enable on data load if desired
         map.dragging.disable();
@@ -82,23 +94,74 @@ function initializeMap() {
         if (map.tap) map.tap.disable();
         weatherMapContainer.style.cursor = 'default';
     }
+    console.log("Script.js: Map initialization complete.");
 }
 
 // --- Event Listeners ---
-searchBtn.addEventListener('click', () => getWeather(cityInput.value.trim()));
-cityInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
+// Add console logs to verify element existence before attaching listeners
+console.log("Debug: searchBtn element found?", searchBtn);
+console.log("Debug: locationBtn element found?", locationBtn);
+console.log("Debug: cityInput element found?", cityInput);
+console.log("Debug: unitToggle element found?", unitToggle);
+console.log("Debug: closeAlertBtn element found?", closeAlertBtn);
+
+
+if (searchBtn) {
+    searchBtn.addEventListener('click', () => {
+        console.log("Event: Search button clicked!");
         getWeather(cityInput.value.trim());
-    }
-});
-locationBtn.addEventListener('click', getWeatherByGeolocation);
-unitToggle.addEventListener('click', toggleUnits);
-closeAlertBtn.addEventListener('click', () => locationAlert.style.display = 'none');
+    });
+} else {
+    console.error("Error: Search button element not found in HTML!");
+}
+
+if (cityInput) {
+    cityInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            console.log("Event: Enter key pressed in city input!");
+            getWeather(cityInput.value.trim());
+        }
+    });
+} else {
+    console.error("Error: City input element not found in HTML!");
+}
+
+if (locationBtn) {
+    locationBtn.addEventListener('click', () => {
+        console.log("Event: My Location button clicked!");
+        getWeatherByGeolocation();
+    });
+} else {
+    console.error("Error: My Location button element not found in HTML!");
+}
+
+if (unitToggle) {
+    unitToggle.addEventListener('click', () => {
+        console.log("Event: Unit toggle clicked!");
+        toggleUnits();
+    });
+} else {
+    console.error("Error: Unit toggle element not found in HTML!");
+}
+
+if (closeAlertBtn) {
+    closeAlertBtn.addEventListener('click', () => {
+        console.log("Event: Close alert button clicked!");
+        locationAlert.style.display = 'none';
+    });
+} else {
+    console.error("Error: Close alert button element not found in HTML!");
+}
+
+console.log("Script.js: All event listeners attempted to attach.");
+
 
 // --- Core Function to Fetch Weather Data ---
 async function getWeather(query, isGeolocation = false) {
+    console.log("Function: getWeather called with query:", query);
     if (!query) {
         showError('Please enter a city name or enable geolocation.');
+        console.log("getWeather: Query is empty.");
         return;
     }
 
@@ -130,15 +193,22 @@ async function getWeather(query, isGeolocation = false) {
 
         currentWeatherData = data;
         updateWeatherDisplay();
+        console.log("updateWeatherDisplay completed.");
 
         setTimeout(() => {
             weatherDisplayContent.classList.add('active');
             document.querySelectorAll('.module').forEach(module => {
                 module.classList.add('fade-in', 'slide-up');
             });
+            // Crucial for map visibility/rendering after container becomes active
+            if (map) {
+                map.invalidateSize(); // Tell Leaflet its container size might have changed
+                console.log("Map invalidated size.");
+            }
         }, 50);
 
         setDynamicBodyBackground(data.current);
+        console.log("Dynamic background set.");
     } catch (error) {
         console.error('Frontend: Error fetching weather:', error);
         let errorMessage = `Error: ${error.message}`;
@@ -161,7 +231,11 @@ async function getWeather(query, isGeolocation = false) {
 
 // --- Display Weather Data (updates based on currentWeatherData and isCelsius) ---
 function updateWeatherDisplay() {
-    if (!currentWeatherData) return;
+    console.log("Function: updateWeatherDisplay called.");
+    if (!currentWeatherData) {
+        console.warn("updateWeatherDisplay: currentWeatherData is null, cannot update display.");
+        return;
+    }
 
     const current = currentWeatherData.current;
     const forecast = currentWeatherData.forecast;
@@ -188,12 +262,32 @@ function updateWeatherDisplay() {
         dewPoint = isCelsius ? dewPoint.toFixed(1) : ((dewPoint * 9/5) + 32).toFixed(1);
     }
 
-    // Update Header Date & Time (using current.dt and current.timezone)
-    const currentUTC = new Date(current.dt * 1000);
-    const cityLocalTime = new Date(currentUTC.getTime() + (current.timezone * 1000));
-    currentDateTimeEl.textContent = cityLocalTime.toLocaleDateString('en-GB', {
-        month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true
-    }).replace(',', '');
+    // --- Corrected Time & Date Calculation for Header ---
+    // Calculate the Unix timestamp in seconds for the city's local time
+    // OWM's `dt` is UTC Unix timestamp in seconds. `timezone` is offset from UTC in seconds.
+    const cityLocalUnixTimestampSeconds = current.dt + current.timezone;
+
+    // Create a Date object from this timestamp. We will then extract its components using UTC methods
+    // to ensure they represent the time for the city's timezone, irrespective of the browser's local timezone.
+    const cityDateForDisplay = new Date(cityLocalUnixTimestampSeconds * 1000);
+
+    // Format time (HH:MM AM/PM) using UTC methods
+    let hours = cityDateForDisplay.getUTCHours();
+    const minutes = cityDateForDisplay.getUTCMinutes();
+    const ampm = hours >= 12 ? 'pm' : 'am';
+    hours = hours % 12; // Convert to 12-hour format
+    hours = hours ? hours : 12; // The hour '0' (midnight) should be '12'
+    const formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
+    const formattedTime = `${hours}:${formattedMinutes}${ampm}`;
+
+    // Format date (Month Day) using UTC methods
+    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const day = cityDateForDisplay.getUTCDate();
+    const month = monthNames[cityDateForDisplay.getUTCMonth()];
+    const formattedDate = `${month} ${day}`;
+
+    // Update Header Date & Time
+    currentDateTimeEl.textContent = `${formattedDate}, ${formattedTime}`;
 
 
     // Current Weather Card
@@ -228,7 +322,9 @@ function updateWeatherDisplay() {
     }
 
 
-    // Precipitation Timeline (using current browser time for local comparison)
+    // Precipitation Timeline (using current browser time for local comparison, as per previous logic)
+    // Note: These times will be based on the user's browser's local time, NOT the queried city's local time,
+    // as OpenWeatherMap's Minutely forecast (which provides these granular timestamps) is typically a paid feature.
     const nowBrowserTime = new Date();
     const commonTimeOptions = { hour: 'numeric', minute: '2-digit', hour12: true };
     nowTimeEl.textContent = nowBrowserTime.toLocaleTimeString('en-US', commonTimeOptions);
@@ -346,6 +442,7 @@ function displayDailyForecast(forecast, isCelsius) {
 
 // --- Geolocation ---
 function getWeatherByGeolocation() {
+    console.log("Function: getWeatherByGeolocation called.");
     showLoading(true);
     hideError();
     resetContentAnimations();
@@ -355,9 +452,11 @@ function getWeatherByGeolocation() {
             (position) => {
                 const lat = position.coords.latitude;
                 const lon = position.coords.longitude;
+                console.log("Geolocation: Got position. Lat:", lat, "Lon:", lon);
                 getWeather({ latitude: lat, longitude: lon }, true);
             },
             (error) => {
+                console.error("Geolocation Error:", error);
                 showLoading(false);
                 switch (error.code) {
                     case error.PERMISSION_DENIED:
@@ -376,6 +475,7 @@ function getWeatherByGeolocation() {
             }
         );
     } else {
+        console.warn("Geolocation is not supported by this browser.");
         showLoading(false);
         showError("Geolocation is not supported by this browser.");
     }
@@ -383,6 +483,7 @@ function getWeatherByGeolocation() {
 
 // --- Unit Conversion ---
 function toggleUnits() {
+    console.log("Function: toggleUnits called.");
     isCelsius = !isCelsius;
     if (currentWeatherData) {
         updateWeatherDisplay();
@@ -391,6 +492,7 @@ function toggleUnits() {
 
 // --- Dynamic Body Background based on Weather ---
 function setDynamicBodyBackground(currentWeather) {
+    console.log("Function: setDynamicBodyBackground called.");
     const weatherId = currentWeather.weather[0].id;
     const iconCode = currentWeather.weather[0].icon;
 
@@ -455,6 +557,7 @@ function getWindDirection(degree) {
 
 // Function to remove animation classes, preparing for a new animation cycle
 function resetContentAnimations() {
+    console.log("Function: resetContentAnimations called.");
     weatherDisplayContent.classList.remove('active');
     document.querySelectorAll('.module').forEach(module => {
         module.classList.remove('fade-in', 'slide-up');
@@ -464,7 +567,9 @@ function resetContentAnimations() {
 
 // Initial state: hide content animations until data is loaded
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("Script.js: DOMContentLoaded event fired.");
     initializeMap();
     resetContentAnimations();
-    getWeatherByGeolocation();
+    getWeatherByGeolocation(); // Try geolocation on load
+    console.log("Script.js: Initial setup complete.");
 });
